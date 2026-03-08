@@ -254,10 +254,10 @@ function raw_data = LTspice2Matlab( filename, varargin )
             
         else  %Variable header section
             leading_ch_index = find( (the_line(1:end-1)==' ' | the_line(1:end-1)==char(9)) & (the_line(2:end)~=' ' & the_line(2:end)~=char(9)) );
-            if length(leading_ch_index)~=3,  
-                try fclose( fid );  catch end
-                error( sprintf('Format error in LTspice file "%s" ... Wrong number of columns in the variable define section', filename ));  
-            end
+            % if length(leading_ch_index)~=3,  
+            %     try fclose( fid );  catch end
+            %     error( sprintf('Format error in LTspice file "%s" ... Wrong number of columns in the variable define section', filename ));  
+            % end
             
             part1 = fliplr(deblank(fliplr(deblank(the_line( (leading_ch_index(1)+1) : leading_ch_index(2) )))));
             part2 = fliplr(deblank(fliplr(deblank(the_line( (leading_ch_index(2)+1) : leading_ch_index(3) )))));
