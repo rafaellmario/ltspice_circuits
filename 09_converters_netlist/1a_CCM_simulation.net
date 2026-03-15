@@ -1,0 +1,13 @@
+CCM Simulation (a)
+Vg 1 0 dc 12
+Rg 1 1a 1u
+Xswitch 1a 2 2 0 4 CCM1
+.lib ./lib/ccm1.lib
+L1 2 2a 6u
+RL1 2a 3 1u
+C 3 0 200u
+R 3 0 0.5
+vd 4 0 dc 0.4166667 ac 1
+*.probe
+.ac DEC 201 10 100k
+.end

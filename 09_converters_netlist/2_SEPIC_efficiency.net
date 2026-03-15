@@ -1,0 +1,25 @@
+SEPIC DC conversion and efficiency
+
+*Define parameters:
+.param Ron=0.0 VD=0.8 RD=0.05
+* Analysis setup:
+.dc lin Vc 0.1 1 0.01
+.step lin PARAM Ron 0 1 0.5
+
+* converter netlist:
+Vg  1  0  50V
+L1  1  2x 800u
+RL1 2x 2  0.5
+L2  0  3x 100uH
+RL2 3x 3  0.1
+C1  2  3  100u
+C2  4  0  100u
+Xswitch 2 0 4 3 5 ccm2
++params: Ron={Ron} VD={VD} RD={RD}
+Rload 4 0 50
+
+*Duty cycle input
+Vc 5 0 0.5
+.lib ./lib/ccm2.lib
+*.probe
+.end

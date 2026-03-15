@@ -1,0 +1,15 @@
+Buck-boost converter
+
+.lib ./lib/ccm2.lib
+Vg 1 0 15
+Xswitch 1 2 2 3 5 ccm2
++PARAMS: Ron = 0.05 VD = 0.8 RD = 0
+RL 2 4 0.1
+L1 4 0 15u ic = 0
+C1 3 0 50u ic = 0
+* inverting load connection to measure the current
+R  0 3 20
+Vc 5 0 0.8
+.tran 10u 1.2m 0m 10u uic
+*.probe
+.end

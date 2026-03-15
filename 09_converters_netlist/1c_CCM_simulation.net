@@ -1,0 +1,20 @@
+CCM simulation (c)
+
+Vg 1 0 dc 12
+Rg 1 1a 1u
+Lf 1a 1b 300u IC=4.167
+Cf 1b 0 100u IC=12
+Xswitch 1b 2 2 0 4 CCM1
+.lib ./lib/ccm1.lib
+L1 2 2a 6u IC=10
+RL1 2a 3 1u
+C 3 0 200u IC=5
+Sload 3 0 5 0 load
+.model load VSWITCH Ron=0.5 Roff=2.5
+VLC 5 0 PULSE(-2 2 0 1u 1u 50m 101m)
+RLC 5 0 1Meg
+vd 4 0 dc 0.4166667
+Rd 4 0 1Meg
+*.probe
+.tran 5u 100m uic
+.end

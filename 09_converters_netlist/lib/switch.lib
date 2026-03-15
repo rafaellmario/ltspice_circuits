@@ -1,0 +1,50 @@
+********************************************************************
+* MODEL: ccm1
+* Application: two switch PWM converters
+* LIMITATIONS: Ideal switches, CCM only, no transformer
+********************************************************************
+
+* Parameters: none
+********************************************************************
+* Nodes:
+* 1: transistor +(D)
+* 2: transistor -(S)
+* 3: diode cathode (K)
+* 4: diode anode (A)
+* 5: duty ratio (duty)
+********************************************************************
+
+.SUBCKT ccm1 1 2 3 4 5
+	Et 1 2 value = {(1-v(5))*v(3,4)/v(5)}
+	Gd 4 3 value = {(1-v(5))*i(Et)/v(5)}
+.ENDS
+
+********************************************************************
+
+********************************************************************
+* MODEL: ccm2
+* Application: two switch PWM converters, includes 
+* conduction losses due to Ron, VD, RD
+* LIMITATIONS: CCM only, no transformer
+********************************************************************
+* Parameters: 
+* Ron = transistor on-resistance
+* VD = diode foward voltage drop
+* RD = diode on-resistance
+********************************************************************
+* Nodes:
+* 1: transistor +(D)
+* 2: transistor -(S)
+* 3: diode cathode (K)
+* 4: diode anode (A)
+* 5: duty ratio (duty)
+********************************************************************
+.SUBCKT ccm2 1 2 3 4 5
++PARAMS: Ron = 0 VD = 0 R = 0
+	Er 1 1x value={i(Et)*(Ron+(1-v(5))*RD/v(5))/v(5)}
+	Et 1x 2 value={(1-v(5))*(v(3,4)+VD)/v(5)}
+        Gd 4 3  value={(1-v(5))*i(Et)/v(5)}	
+.ENDS
+********************************************************************
+
+
