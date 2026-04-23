@@ -184,13 +184,14 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 % 2) Downsampling does not apply anti-alias filtering.
 % 3) Variable numbering follows LTspice variable table order.
 % 4) Current sign convention follows LTspice device orientation.
+% 5) .op simulations do not suport downsampling
 %
 % -------------------------------------------------------------------------
-% ORIGINAL AUTHOR
+% AUTHOR
 % -------------------------------------------------------------------------
-% Paul Wagner
-%
-% Extended / adapted for additional formats:
+% Original: Paul Wagner
+% Extended version: @rafaellmario
+% - Extended / adapted for additional formats:
 %   .dc and .op support
 % -------------------------------------------------------------------------
 
@@ -291,7 +292,7 @@ while 1
         var_value = strtrim(the_line(idx+1:end));
 
         keep = find(var_name~=' ' & var_name~='.' & ...
-                    var_name~=char(9) & var_name~=char(10) & ...
+                    var_name~=char(9) & var_name ~= char(10) & ...
                     var_name~=char(13));
 
         var_name = lower(var_name(keep));
@@ -386,13 +387,13 @@ end
 % Adjust the variable list according to simulation type
 %------------------------------------------------------------
 if strcmpi(simulation_type,'.op')
-    % .op: todas as variáveis são dados válidos
+    % .op: all the variables are valid data
     raw_data.num_variables = raw_data.novariables;
     raw_data.variable_name_list = variable_name_list;
     raw_data.variable_type_list = variable_type_list;
 else
     % .tran / .ac / .dc:
-    % índice 0 = tempo, frequência ou sweep
+    % index 0 = time, frequency or sweep
     raw_data.num_variables = raw_data.novariables - 1;
     raw_data.variable_name_list = variable_name_list(2:end);
     raw_data.variable_type_list = variable_type_list(2:end);
@@ -546,10 +547,10 @@ if strcmpi(file_format,'binary')
     
         for p = 1:NumPnts_DS
     
-            % variável de sweep
+            % sweep variable (double precision)
             sweep_val = fread(fid,1,'double',machineformat);
     
-            % demais variáveis
+            % another variables (single precision)
             vals = fread(fid,raw_data.num_variables,'float',machineformat);
     
             if isempty(vals)
@@ -570,26 +571,22 @@ if strcmpi(file_format,'binary')
         
         for p = 1:NumPnts_DS
             vals = zeros(raw_data.num_variables,1);
-            % First variable is double
+            % First variable is double precision
             vals(1) = fread(fid,1,'double',0,machineformat);
-            % Another variables are float
+            % Another variables are float (single precision)
             vals(2:end) = fread(fid,raw_data.num_variables-1,'float',0,machineformat);
             
             if length(vals) ~= raw_data.num_variables
                 fclose(fid);
-                error('Erro ao ler dados .op');
+                error('Error reading .op');
             end
 
-            % 
+
             if isempty(vals)
                 break;
             end
-
             raw_data.variable_mat(:,p) = vals;
-
         end
-        
-        raw_data.variable_mat(:,1) = vals(selected_vars);
     end
 %% ========================================================================
 % ASCII DATA

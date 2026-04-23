@@ -184,13 +184,14 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 % 2) Downsampling does not apply anti-alias filtering.
 % 3) Variable numbering follows LTspice variable table order.
 % 4) Current sign convention follows LTspice device orientation.
+% 5) .op simulations do not suport downsampling
 %
 % -------------------------------------------------------------------------
-% ORIGINAL AUTHOR
+% AUTHOR
 % -------------------------------------------------------------------------
-% Paul Wagner
-%
-% Extended / adapted for additional formats:
+% Original: Paul Wagner
+% Extended version: @rafaellmario
+% - Extended / adapted for additional formats:
 %   .dc and .op support
 % -------------------------------------------------------------------------
 
@@ -291,7 +292,7 @@ while 1
         var_value = strtrim(the_line(idx+1:end));
 
         keep = find(var_name~=' ' & var_name~='.' & ...
-                    var_name~=char(9) & var_name~=char(10) & ...
+                    var_name~=char(9) & var_name ~= char(10) & ...
                     var_name~=char(13));
 
         var_name = lower(var_name(keep));
@@ -311,7 +312,6 @@ while 1
 
     %% VARIABLE TABLE
     else
-
         lead = find( ...
             (the_line(1:end-1)==' ' | the_line(1:end-1)==char(9)) & ...
             (the_line(2:end)~=' ' & the_line(2:end)~=char(9)));
@@ -319,7 +319,7 @@ while 1
         if length(lead)<3
             continue;
         end
-
+        
         part1 = strtrim(the_line((lead(1)+1):lead(2)));
         part2 = strtrim(the_line((lead(2)+1):lead(3)));
         part3 = strtrim(the_line((lead(3)+1):end));
@@ -352,7 +352,7 @@ raw_data = rmfield(raw_data,'nopoints');
 
 
 %------------------------------------------------------------
-% Definir tipo de simulação ANTES de ajustar número de variáveis
+% Check the simulation type
 %------------------------------------------------------------
 simulation_type = '';
 
@@ -369,17 +369,31 @@ elseif ~isempty(strfind(lower(raw_data.plotname),'operating point'))
     simulation_type = '.op';
 end
 
+if isempty(simulation_type)
+    fclose(fid);
+    error('Unsupported simulation type.');
+end
+
+if contains(lower(raw_data.flags),'fastaccess')
+    fclose(fid);
+    error('FastAccess format not supported.');
+end
+
+if isfield(raw_data,'flags')
+    raw_data = rmfield(raw_data,'flags');
+end
+
 %------------------------------------------------------------
-% Ajuste correto da lista de variáveis
+% Adjust the variable list according to simulation type
 %------------------------------------------------------------
 if strcmpi(simulation_type,'.op')
-    % .op: todas as variáveis são dados válidos
+    % .op: all the variables are valid data
     raw_data.num_variables = raw_data.novariables;
     raw_data.variable_name_list = variable_name_list;
     raw_data.variable_type_list = variable_type_list;
 else
     % .tran / .ac / .dc:
-    % índice 0 = tempo, frequência ou sweep
+    % index 0 = time, frequency or sweep
     raw_data.num_variables = raw_data.novariables - 1;
     raw_data.variable_name_list = variable_name_list(2:end);
     raw_data.variable_type_list = variable_type_list(2:end);
@@ -388,7 +402,7 @@ end
 raw_data = rmfield(raw_data,'novariables');
 
 %------------------------------------------------------------
-% Limpeza de campos auxiliares
+% Clean auxiliary fields
 %------------------------------------------------------------
 if isfield(raw_data,'command')
     raw_data = rmfield(raw_data,'command');
@@ -405,37 +419,6 @@ else
     general_offset = 0;
 end
 
-%% ------------------------------------------------------------------------
-% SIMULATION TYPE
-% -------------------------------------------------------------------------
-simulation_type = '';
-
-if contains(lower(raw_data.plotname),'transient analysis')
-    simulation_type = '.tran';
-
-elseif contains(lower(raw_data.plotname),'ac analysis')
-    simulation_type = '.ac';
-
-elseif contains(lower(raw_data.plotname),'dc transfer characteristic')
-    simulation_type = '.dc';
-
-elseif contains(lower(raw_data.plotname),'operating point')
-    simulation_type = '.op';
-end
-
-if isempty(simulation_type)
-    fclose(fid);
-    error('Unsupported simulation type.');
-end
-
-if contains(lower(raw_data.flags),'fastaccess')
-    fclose(fid);
-    error('FastAccess format not supported.');
-end
-
-if isfield(raw_data,'flags')
-    raw_data = rmfield(raw_data,'flags');
-end
 
 %% ------------------------------------------------------------------------
 % SELECTED VARS
@@ -455,7 +438,13 @@ selected_vars = unique(selected_vars(:).');
 raw_data.selected_vars = selected_vars;
 
 NumPnts = raw_data.num_data_pnts;
-NumPnts_DS = floor(NumPnts/downsamp_N);
+
+if strcmpi(simulation_type,'.op')
+    NumPnts_DS = NumPnts; % in op simulation is not possible to down sampling
+else
+    NumPnts_DS = floor(NumPnts/downsamp_N);
+end
+
 raw_data.num_data_pnts = NumPnts_DS;
 
 NumVars = raw_data.num_variables + 1;
@@ -508,7 +497,7 @@ if strcmpi(file_format,'binary')
             machineformat).';
 
     %% --------------------------------------------------------------------
-    % .AC  (ORIGINAL LOGIC PRESERVED)
+    % .AC  
     % ---------------------------------------------------------------------
     elseif strcmpi(simulation_type,'.ac')
 
@@ -548,55 +537,57 @@ if strcmpi(file_format,'binary')
         raw_data.freq_vect = fread(fid,NumPnts_DS,'double', ...
             (NumVars-1)*16 + 8 + (downsamp_N-1)*NumVars*16, ...
             machineformat).';
-%% --------------------------------------------------------------------
-% .DC
-% ---------------------------------------------------------------------
-elseif strcmpi(simulation_type,'.dc')
+    %% --------------------------------------------------------------------
+    % .DC
+    % ---------------------------------------------------------------------
+    elseif strcmpi(simulation_type,'.dc')
 
-    raw_data.variable_mat = zeros(length(selected_vars),NumPnts_DS);
-    sweep_vect = zeros(1,NumPnts_DS);
-
-    for p = 1:NumPnts_DS
-
-        % variável de sweep
-        sweep_val = fread(fid,1,'double',machineformat);
-
-        % demais variáveis
-        vals = fread(fid,raw_data.num_variables,'float',machineformat);
-
-        if isempty(vals)
-            break;
+        raw_data.variable_mat = zeros(length(selected_vars),NumPnts_DS);
+        sweep_vect = zeros(1,NumPnts_DS);
+    
+        for p = 1:NumPnts_DS
+    
+            % sweep variable (double precision)
+            sweep_val = fread(fid,1,'double',machineformat);
+    
+            % another variables (single precision)
+            vals = fread(fid,raw_data.num_variables,'float',machineformat);
+    
+            if isempty(vals)
+                break;
+            end
+            
+            sweep_vect(p) = sweep_val;
+            raw_data.variable_mat(:,p) = vals(selected_vars);
         end
-
-        sweep_vect(p) = sweep_val;
-        raw_data.variable_mat(:,p) = vals(selected_vars);
-    end
-
-    raw_data.sweep_vect = sweep_vect;
-
-
-%% --------------------------------------------------------------------
-% .OP
-% ---------------------------------------------------------------------
+    
+        raw_data.sweep_vect = sweep_vect;
+    %% --------------------------------------------------------------------
+    % .OP
+    % ---------------------------------------------------------------------
     elseif strcmpi(simulation_type,'.op')
 
-    raw_data.variable_mat = zeros(length(selected_vars),1);
+        raw_data.variable_mat = zeros(length(selected_vars),NumPnts_DS);
+        
+        for p = 1:NumPnts_DS
+            vals = zeros(raw_data.num_variables,1);
+            % First variable is double precision
+            vals(1) = fread(fid,1,'double',0,machineformat);
+            % Another variables are float (single precision)
+            vals(2:end) = fread(fid,raw_data.num_variables-1,'float',0,machineformat);
+            
+            if length(vals) ~= raw_data.num_variables
+                fclose(fid);
+                error('Error reading .op');
+            end
 
-    vals = zeros(raw_data.num_variables,1);
 
-    % primeira variável em double
-    vals(1) = fread(fid,1,'double',0,machineformat);
-
-    % restantes em float
-    vals(2:end) = fread(fid,raw_data.num_variables-1,'float',0,machineformat);
-
-    if length(vals) ~= raw_data.num_variables
-        fclose(fid);
-        error('Erro ao ler dados .op');
+            if isempty(vals)
+                break;
+            end
+            raw_data.variable_mat(:,p) = vals;
+        end
     end
-
-    raw_data.variable_mat(:,1) = vals(selected_vars);
-
 %% ========================================================================
 % ASCII DATA
 % ========================================================================

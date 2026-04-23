@@ -45,6 +45,7 @@ hold off
 axis('tight')
 grid on
 grid minor
+set(gca,'FontSize',12)
 title(sprintf('Waveform %s, %s', raw_data.variable_name_list{1:2}));
 legend(raw_data.variable_name_list{1:2}, 'Location', 'best');
 ylabel(sprintf('%s', raw_data.variable_type_list{1}))
