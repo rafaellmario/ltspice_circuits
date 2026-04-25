@@ -17,9 +17,16 @@ if ~exist(FILENAME,'file')
     error('.raw function not found. Please check your path.');
 end
 
+% Import data from .raw LTSpice file
 raw_data = LTSpice2Matlab(FILENAME);
-table(string(raw_data.variable_name_list'), ...
+
+% Create a Table data
+T = table(string(raw_data.variable_name_list'), ...
       raw_data.variable_mat, ...
-      string(raw_data.variable_type_list'))
+      string(raw_data.variable_type_list'), ...
+      'VariableNames',["Name","Value","Type"]);
+
+% Display the variables content
+disp(T)
 
 %%

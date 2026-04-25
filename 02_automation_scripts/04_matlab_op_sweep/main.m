@@ -1,4 +1,4 @@
-%% Open .ac analysis
+%% .op analysis
 %%
 clear 
 close all
@@ -7,7 +7,6 @@ clc
 % FILENAME is a string containing the name and path of the .raw file 
 % to be converted
 FILENAME = './thermal.raw';
-% FILENAME = './single.raw';
 
 % Ensure the LTspice2Matlab function is available
 if ~exist('LTSpice2Matlab', 'file')
@@ -27,19 +26,30 @@ end
 % Compute the NTC curve
 r_ntc = (raw_data.variable_mat(3,:) - raw_data.variable_mat(2,:))./raw_data.variable_mat(5,:); 
 
-figure()
-% Plot NTC resistive curve
-subplot(2,1,1)
-plot(raw_data.variable_mat(1,:),r_ntc)
-grid on
-grid minor
-set(gca,'FontSize',12,'XTickLabel',[])
 
-% Plot linearized curve
-subplot(2,1,2)
-plot(raw_data.variable_mat(1,:),raw_data.variable_mat(4,:))
+% Plot NTC resistive curve
+figure()
+% First axis plot
+plot(raw_data.variable_mat(1,:),r_ntc, ...
+    'LineWidth',1.5,'Marker','o')
+ax1 = gca;
+ax1_position = ax1.Position;
+set(ax1,'XTickLabel',[],'FontSize',12)
 grid on
 grid minor
-set(gca,'FontSize',12)
+ylabel('R_{ntc} [\Omega]','FontSize',12)
+xlabel('T [^oC]')
+
+% Second axis plot 
+ax2 = axes('Color','none'); % Create secondary axis
+plot(ax2,raw_data.variable_mat(1,:),raw_data.variable_mat(4,:), ...
+    'Color','r','LineWidt',1.5,'Marker','+')
+ax2.Position = ax1_position;
+ax2.Color = 'none';
+ax2.YColor = 'r';
+ax2.YAxisLocation = 'right';
+ylabel('V_{out} [V]','FontSize',12)
+set(ax2,'FontSize',12)
+grid off
 
 %%

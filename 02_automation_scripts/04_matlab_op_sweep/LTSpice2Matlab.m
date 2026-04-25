@@ -572,19 +572,31 @@ if strcmpi(file_format,'binary')
         for p = 1:NumPnts_DS
             vals = zeros(raw_data.num_variables,1);
             % First variable is double precision
-            vals(1) = fread(fid,1,'double',0,machineformat);
+            v1 = fread(fid,1,'double',0,machineformat);
+            if isempty(v1)
+                raw_data.variable_mat = raw_data.variable_mat(:,1:p-1);
+                raw_data.num_data_pnts = p-1;
+                break;
+            end
+            vals(1) = v1;
+
             % Another variables are float (single precision)
-            vals(2:end) = fread(fid,raw_data.num_variables-1,'float',0,machineformat);
+            vothers =  fread(fid,raw_data.num_variables-1,'float',0,machineformat);
+            if numel(vothers) < (raw_data.num_variables-1)
+                raw_data.variable_mat = raw_data.variable_mat(:,1:p-1);
+                raw_data.num_data_pnts = p-1;
+                break;
+            end
+            vals(2:end) = vothers;
             
             if length(vals) ~= raw_data.num_variables
                 fclose(fid);
                 error('Error reading .op');
             end
 
-
-            if isempty(vals)
-                break;
-            end
+            % if isempty(vals)
+            %     break;
+            % end
             raw_data.variable_mat(:,p) = vals;
         end
     end

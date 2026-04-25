@@ -18,9 +18,9 @@ if ~exist(FILENAME,'file')
     error('.raw function not found. Please check your path.');
 end
 
+% Import with empty square brackets just for check variable list
 raw_data = LTSpice2Matlab(FILENAME,[]);
-fprintf("The file has %d variables listed below:\n",raw_data.num_variables);
-raw_data = LTSpice2Matlab(FILENAME,[]); 
+fprintf("The file has %d variables listed below:\n",raw_data.num_variables); 
 for k = 1:raw_data.num_variables
     fprintf('%s ', raw_data.variable_name_list{k})
 end
@@ -37,7 +37,9 @@ for k = SELECTED_VARS
 end
 fprintf('\n')
 
+% Plot imported variables
 figure()
+subplot(2,1,1)
 hold on
 plot(raw_data.time_vect, raw_data.variable_mat(1,:), 'b','LineWidth',1.5);
 plot(raw_data.time_vect, raw_data.variable_mat(2,:), 'r','LineWidth',1.5);
