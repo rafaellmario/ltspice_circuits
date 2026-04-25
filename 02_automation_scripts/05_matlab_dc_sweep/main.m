@@ -16,7 +16,7 @@ if ~exist('LTSpice2Matlab', 'file')
     error('LTspice2Matlab function not found. Please check your path.');
 end
 
-% Ensure the LTspice2Matlab function is available
+% Ensure the .net file is available
 if ~exist(sprintf("./%s.net",FILENAME), 'file')
     error('%s.net was not found',FILENAME);
 end
@@ -25,18 +25,22 @@ end
 delete("./*.raw") % remove raw files
 delete("./*.log") % remove log files
 
+% egex pattern to replace in the .net file
 vg_pattern = ".param vg=\d+\.?\d*";
+
+% Iteration counting
 m = 1;
+
 
 for k = [5 4.2 3.4 3 2]
 
     % Store the previous simulation data content
     fileContent = fileread(sprintf("./%s.net",FILENAME));
     
-    % Create a string to modify the simulation
+    % String to modify the simulation
     vg_current = sprintf(".param vg=%.2f",k);
     
-    % Update the simulation circuit
+    % Change simulation circuit step parameter
     modifiedContent = regexprep(fileContent,vg_pattern,vg_current);
     
     % Write the modified content
@@ -51,23 +55,23 @@ for k = [5 4.2 3.4 3 2]
     command = sprintf('"%sLTspice.exe" -b -Run "./%s.net"', ...
     SpicePath,FILENAME);
     dos(command);
-    pause(1); % Wait for 5 seconds to run the simulation
+    pause(1); % Wait for 1 second to run the simulation
     
     % Get the results
-    if ~exist(sprintf("./%s.net",FILENAME), 'file')
+    outputfile = sprintf('%s.raw', FILENAME);
+    if ~exist(outputfile,'file')
         error('.raw file was not found');
     end
-    outputfile = sprintf('%s.raw', FILENAME);
     raw_data = LTSpice2Matlab(outputfile);
 
     % capture sweep data
-    id(:,m) = raw_data.variable_mat;
-    rds(:,m) = raw_data.sweep_vect./raw_data.variable_mat;
-    vg_steps(m) = sprintf("V_{gs} = %.1f",k);
-    m = m + 1;
+    id(:,m)  = raw_data.variable_mat; % drain current
+    rds(:,m) = raw_data.sweep_vect./raw_data.variable_mat; % drain resistence
+    vg_steps(m) = sprintf("V_{gs} = %.1f",k); % vgs ste values string
+    m = m + 1; % iteration counting
 end 
 
-% For this simulation sweep variable was the VDS voltage
+% For this simulation sweep variable is the VDS voltage
 vdd = raw_data.sweep_vect;
 
 % Clear unecessary variables
