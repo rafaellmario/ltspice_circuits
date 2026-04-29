@@ -16,6 +16,7 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 %   - .ac     AC Small-Signal Analysis
 %   - .dc     DC Sweep Analysis
 %   - .op     DC Operating Point
+%   - .tf     DC Transfer Function Analysis
 %
 % Supported file encodings:
 %   - Binary
@@ -137,12 +138,16 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 %
 % .op:
 %   No axis vector is required.
+%   raw_data.variable_mat contains operating point value per variable.
+%
+% .tf:
+%   No axis vector is required.
 %   raw_data.variable_mat contains one operating point value per variable.
 %
 % -------------------------------------------------------------------------
 % DATA FORMAT DETAILS
 % -------------------------------------------------------------------------
-% .tran and .dc:
+% .tran .dc .op and .tf:
 %   variable_mat is real-valued.
 %
 % .ac:
@@ -184,7 +189,7 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 % 2) Downsampling does not apply anti-alias filtering.
 % 3) Variable numbering follows LTspice variable table order.
 % 4) Current sign convention follows LTspice device orientation.
-% 5) .op simulations do not suport downsampling
+% 5) .op and .tf simulations do not suport downsampling
 %
 % -------------------------------------------------------------------------
 % AUTHOR
@@ -192,7 +197,7 @@ function raw_data = LTSpice2Matlab(filename, varargin)
 % Original: Paul Wagner
 % Extended version: @rafaellmario
 % - Extended / adapted for additional formats:
-%   .dc and .op support
+%   .dc .op and .tf support
 % -------------------------------------------------------------------------
 
 raw_data = [];
@@ -367,6 +372,8 @@ elseif ~isempty(strfind(lower(raw_data.plotname),'dc transfer characteristic'))
 
 elseif ~isempty(strfind(lower(raw_data.plotname),'operating point'))
     simulation_type = '.op';
+elseif ~isempty(strfind(lower(raw_data.plotname),'transfer function'))
+    simulation_type = '.tf';
 end
 
 if isempty(simulation_type)
@@ -386,8 +393,8 @@ end
 %------------------------------------------------------------
 % Adjust the variable list according to simulation type
 %------------------------------------------------------------
-if strcmpi(simulation_type,'.op')
-    % .op: all the variables are valid data
+if strcmpi(simulation_type,'.op') || strcmpi(simulation_type,'.tf') 
+    % .op and .tf: all the variables are valid data
     raw_data.num_variables = raw_data.novariables;
     raw_data.variable_name_list = variable_name_list;
     raw_data.variable_type_list = variable_type_list;
@@ -439,8 +446,8 @@ raw_data.selected_vars = selected_vars;
 
 NumPnts = raw_data.num_data_pnts;
 
-if strcmpi(simulation_type,'.op')
-    NumPnts_DS = NumPnts; % in op simulation is not possible to down sampling
+if strcmpi(simulation_type,'.op') || strcmpi(simulation_type,'.tf') 
+    NumPnts_DS = NumPnts; % .op and .tf simulation is not possible to downsampling
 else
     NumPnts_DS = floor(NumPnts/downsamp_N);
 end
@@ -594,11 +601,28 @@ if strcmpi(file_format,'binary')
                 error('Error reading .op');
             end
 
-            % if isempty(vals)
-            %     break;
-            % end
             raw_data.variable_mat(:,p) = vals;
         end
+    %% --------------------------------------------------------------------
+    % .TF
+    % ---------------------------------------------------------------------
+    elseif strcmpi(simulation_type,'.tf')
+        
+        raw_data.variable_mat = zeros(length(selected_vars),1);
+        vals = zeros(raw_data.num_variables,1);
+        % First variable is double precision
+        v1 = fread(fid,1,'double',0,machineformat);
+        vals(1) = v1;
+
+        % Another variables are float (single precision)
+        vothers =  fread(fid,raw_data.num_variables-1,'float',0,machineformat);
+        vals(2:end) = vothers;
+            
+        if length(vals) ~= raw_data.num_variables
+            fclose(fid);
+            error('Error reading .tf');
+        end
+        raw_data.variable_mat = vals;
     end
 %% ========================================================================
 % ASCII DATA
@@ -633,9 +657,9 @@ elseif strcmpi(file_format,'ascii')
             1j*M(3+selected_vars*2,1:downsamp_N:end);
 
     %% --------------------------------------------------------------------
-    % .DC / .OP
+    % .DC / .OP / .TF
     % ---------------------------------------------------------------------
-    elseif strcmpi(simulation_type,'.dc') || strcmpi(simulation_type,'.op')
+    elseif strcmpi(simulation_type,'.dc') || strcmpi(simulation_type,'.op') || strcmpi(simulation_type,'.tf')
 
         M = fscanf(fid,'%g',[raw_data.num_variables+2 raw_data.num_data_pnts]);
 
