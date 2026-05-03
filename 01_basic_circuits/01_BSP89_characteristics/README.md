@@ -3,10 +3,10 @@
 In this set of simulations, the characteristic curves of the BSP89 MOSFET (Infineon) are obtained using LTspice.
 
 - `bsp89_input_charac.plt`: Transfer characteristic of the transistor  
-  ($I_{D} = f(V_{GS})$)
+  ( $I_{D} = f(V_{GS})$ )
 
 - `bsp_output_charac.plt`: Output characteristic and on-resistance curves  
-  ($I_{D} = f(V_{DS})$ and $R_{DS} = f(V_{DS})$)
+  ( $I_{D} = f(V_{DS})$ and $R_{DS} = f(V_{DS})$ )
 
 ---
 
@@ -19,7 +19,10 @@ During this analysis:
 - Inductors are treated as **short circuits**
 - The solution corresponds to a sequence of DC operating points
 
-![](./img/1_dcswepp_parameters.png)
+<div align="center">
+  <img src="./img/1_dcswepp_parameters.png" width="300" style="border: 1px solid #ccc;">
+  <p><i>DC Sweep parameters</i></p>
+</div>
 
 ---
 
@@ -111,7 +114,11 @@ temp = {Tj}
 
 in the component attribute editor.
 
-![](./img/3_component_temperature_attribute.png)
+
+<div align="center">
+  <img src="./img/3_component_temperature_attribute.png" width="300" style="border: 1px solid #ccc;">
+  <p><i>Changing temperature</i></p>
+</div>
 
 
 ---
@@ -154,7 +161,11 @@ This creates independent graph areas.
 
 Each pane can now use a different x-axis variable.
 
-![](./img/2_unsync_axes.png)
+<div align="center">
+  <img src="./img/2_unsync_axes.png" width="300" style="border: 1px solid #ccc;">
+  <p><i>Unsync plot axes on LTSpice</i></p>
+</div>
+
 
 ---
 
@@ -171,14 +182,20 @@ Each pane can now use a different x-axis variable.
 
 The transfer characteristic of the BSP89 for different operating temperature is demonstrated below.
 
-![](./img/4_bsp89_input_charac.png)
+<div align="center">
+  <img src="./img/4_bsp89_input_charac.png" width="300" style="border: 1px solid #101010;">
+  <p><i>Input Characteristic Result</i></p>
+</div>
 
 
 ### 6.2 Output characteristic - `bsp89_output_charac.plt`
 
 The output characteristics of the BSP89 for giferent $V_{GS}$ values is demonstrated below.
 
-![](./img/5_bsp89_output_charac.png)
+<div align="center">
+  <img src="./img/5_bsp89_output_charac.png" width="300" style="border: 1px solid #101010;">
+  <p><i>Output Characteristic Result</i></p>
+</div>
 
 ## 6. Key Takeaways
 
