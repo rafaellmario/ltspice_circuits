@@ -17,7 +17,7 @@ if ~exist('LTSpice2Matlab', 'file')
 end
 
 % Ensure the .net file is available
-if ~exist(sprintf("./%s.net",FILENAME), 'file')
+if ~exist(sprintf("./%s.cir",FILENAME), 'file')
     error('%s.net was not found',FILENAME);
 end
 
@@ -31,11 +31,10 @@ vg_pattern = ".param vg=\d+\.?\d*";
 % Iteration counting
 m = 1;
 
-
 for k = [5 4.2 3.4 3 2]
 
     % Store the previous simulation data content
-    fileContent = fileread(sprintf("./%s.net",FILENAME));
+    fileContent = fileread(sprintf("./%s.cir",FILENAME));
     
     % String to modify the simulation
     vg_current = sprintf(".param vg=%.2f",k);
@@ -44,7 +43,7 @@ for k = [5 4.2 3.4 3 2]
     modifiedContent = regexprep(fileContent,vg_pattern,vg_current);
     
     % Write the modified content
-    fid = fopen(sprintf("./%s.net",FILENAME),"w"); 
+    fid = fopen(sprintf("./%s.cir",FILENAME),"w"); 
     if fid == -1
         error('Cannot open the file!');
     end
@@ -52,7 +51,7 @@ for k = [5 4.2 3.4 3 2]
     fclose(fid);
     
     % Execute the simulation
-    command = sprintf('"%sLTspice.exe" -b -Run "./%s.net"', ...
+    command = sprintf('"%sLTspice.exe" -b -Run "./%s.cir"', ...
     SpicePath,FILENAME);
     dos(command);
     pause(1); % Wait for 1 second to run the simulation
@@ -77,7 +76,7 @@ vdd = raw_data.sweep_vect;
 % Clear unecessary variables
 clear fileContent vg_pattern vg_current outputfile FILENAME ...
       SpicePath outputfile k m modifiedContent fid command
-
+%%
 figure()
 % Plot ID vs. VDS curve
 subplot(2,1,1)
@@ -86,6 +85,8 @@ ylim([0 0.6])
 grid on 
 grid minor
 set(gca,'FontSize',12)
+ylabel("I_{D} [A]","FontSize",12)
+xlabel("V_{DS} [V]","FontSize",12)
 legend(vg_steps,'Orientation','horizontal','Location','northoutside')
 
 subplot(2,1,2)
@@ -94,6 +95,8 @@ plot(id, rds, 'LineWidth',1.5)
 axis([0 0.6 0 9])
 grid on 
 grid minor
+xlabel("I_{D} [A]","FontSize",12)
+ylabel("R_{DS} [\Omega]","FontSize",12)
 set(gca,'FontSize',12)
 
 %%
