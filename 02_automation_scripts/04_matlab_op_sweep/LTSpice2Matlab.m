@@ -372,8 +372,13 @@ elseif ~isempty(strfind(lower(raw_data.plotname),'dc transfer characteristic'))
 
 elseif ~isempty(strfind(lower(raw_data.plotname),'operating point'))
     simulation_type = '.op';
+
 elseif ~isempty(strfind(lower(raw_data.plotname),'transfer function'))
     simulation_type = '.tf';
+
+elseif ~isempty(strfind(lower(raw_data.plotname),'fft of time domain data'))
+    simulation_type = '.fft';
+
 end
 
 if isempty(simulation_type)
@@ -506,7 +511,7 @@ if strcmpi(file_format,'binary')
     %% --------------------------------------------------------------------
     % .AC  
     % ---------------------------------------------------------------------
-    elseif strcmpi(simulation_type,'.ac')
+    elseif strcmpi(simulation_type,'.ac') || strcmpi(simulation_type,'.fft') 
 
         if length(selected_vars)>1
             g_border = find([2 diff(selected_vars) 2]~=1);
